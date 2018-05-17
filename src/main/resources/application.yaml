@@ -20,6 +20,7 @@ jwt:
   expiration: 604800
   #以此字段作为Authorization值的开头，后面要有空格隔开
   tokenHead: "Rabbit "
+  exceptUrl: "/auth/**"
   route:
     authentication:
     path: auth

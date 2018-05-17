@@ -1,7 +1,9 @@
 package com.yunqi.cloudenglish.config;
 
+import com.yunqi.cloudenglish.config.filter.JwtAuthenticationEntryPoint;
 import com.yunqi.cloudenglish.config.filter.JwtAuthenticationTokenFilter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -31,7 +33,13 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter{
 
     @Autowired
+    private JwtAuthenticationEntryPoint unauthorizedHandler;
+
+    @Autowired
     private UserDetailsService userDetailsService;
+
+    @Value("${jwt.exceptUrl}")
+    private String exceptUrl;
 
     @Autowired
     public void configureAuthentication(AuthenticationManagerBuilder authenticationManagerBuilder) throws Exception{
@@ -53,6 +61,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter{
                 .cors().and()
                 //由于使用JWT，这里就不需要csrf
                 .csrf().disable()
+                //未授权处理
+                .exceptionHandling().authenticationEntryPoint(unauthorizedHandler).and()
                 //基于token，所以不需要session
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
                 .authorizeRequests()
@@ -72,11 +82,12 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter{
                         "/webjars/**"
                 ).permitAll()
                 //// 对于获取token的rest api要允许匿名访问
-                .antMatchers("/auth/**").permitAll()
+                .antMatchers(exceptUrl).permitAll()
                 //除上面外的所有请求全部需要鉴权验证
                 .anyRequest().authenticated();
         //禁用缓存
         httpSecurity.headers().cacheControl();
+        //添加jwt filter
         httpSecurity.addFilterBefore(authenticationTokenFilterBean(), UsernamePasswordAuthenticationFilter.class);
 
     }
